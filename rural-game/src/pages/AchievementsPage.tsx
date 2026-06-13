@@ -1,4 +1,4 @@
-import { useGameStore } from '../stores/gameStore';
+import { useGameStore, getSavedArchives } from '../stores/gameStore';
 import { calculateAnnualRating } from '../utils/calculations';
 import { Trophy, TrendingUp, Leaf, AlertTriangle, CheckCircle, Save, FolderOpen, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
@@ -20,6 +20,7 @@ export default function AchievementsPage() {
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showLoadConfirm, setShowLoadConfirm] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [savedArchives, setSavedArchives] = useState(getSavedArchives());
 
   const publicServiceCoverage = facilities.length > 0
     ? Math.min(
@@ -64,19 +65,17 @@ export default function AchievementsPage() {
 
   const handleSave = () => {
     saveGame();
+    setSavedArchives(getSavedArchives());
     setShowSaveConfirm(true);
     setTimeout(() => setShowSaveConfirm(false), 2000);
   };
 
-  const handleLoad = () => {
-    const savedData = localStorage.getItem('rural-game-state');
-    if (savedData) {
-      const archives = JSON.parse(savedData);
-      if (archives.length > 0) {
-        loadGame(archives[archives.length - 1]);
-        setShowLoadConfirm(true);
-        setTimeout(() => setShowLoadConfirm(false), 2000);
-      }
+  const handleLoad = (archiveIndex: number) => {
+    const archives = getSavedArchives();
+    if (archives.length > 0 && archiveIndex >= 0 && archiveIndex < archives.length) {
+      loadGame(archives[archiveIndex]);
+      setShowLoadConfirm(true);
+      setTimeout(() => setShowLoadConfirm(false), 2000);
     }
   };
 
@@ -252,7 +251,7 @@ export default function AchievementsPage() {
 
         <div className="bg-white p-6 rounded-xl shadow-md">
           <h3 className="text-xl font-bold text-gray-800 mb-4">游戏存档</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <button
               onClick={handleSave}
               className="p-4 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors flex items-center justify-center space-x-2"
@@ -261,7 +260,7 @@ export default function AchievementsPage() {
               <span className="font-bold">保存游戏</span>
             </button>
             <button
-              onClick={handleLoad}
+              onClick={() => setSavedArchives(getSavedArchives())}
               className="p-4 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors flex items-center justify-center space-x-2"
             >
               <FolderOpen size={24} />
@@ -275,6 +274,30 @@ export default function AchievementsPage() {
               <span className="font-bold">重新开始</span>
             </button>
           </div>
+
+          {savedArchives.length > 0 && (
+            <div className="mt-4">
+              <h4 className="text-lg font-bold mb-2">已保存的存档：</h4>
+              <div className="space-y-2">
+                {savedArchives.map((archive, index) => (
+                  <div key={archive.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="font-bold">存档 #{index + 1}</div>
+                      <div className="text-sm text-gray-600">
+                        {archive.year}年 {archive.season} · {new Date(archive.saveTime).toLocaleString()}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleLoad(index)}
+                      className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                    >
+                      加载
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {showSaveConfirm && (
             <div className="mt-4 p-3 bg-green-100 border-2 border-green-500 rounded-lg text-green-800 text-center font-medium">

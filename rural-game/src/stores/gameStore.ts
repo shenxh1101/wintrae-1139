@@ -21,7 +21,7 @@ import {
   calculateAnnualRating,
 } from '../utils/calculations';
 
-const STORAGE_KEY = 'rural-game-state';
+const STORAGE_KEY = 'rural-game-archives';
 
 const createInitialState = (): GameState => ({
   year: 1,
@@ -63,7 +63,7 @@ export const useGameStore = create<GameStore>()(
         }
 
         const newFacility: Facility = {
-          id: `facility_${Date.now()}`,
+          id: `facility_${Date.now()}_${Math.random()}`,
           type,
           position,
           level: 1,
@@ -299,23 +299,50 @@ export const useGameStore = create<GameStore>()(
         const archive: Archive = {
           id: `archive_${Date.now()}`,
           saveTime: new Date().toISOString(),
-          gameState: { ...state },
+          gameState: {
+            year: state.year,
+            season: state.season,
+            day: state.day,
+            money: state.money,
+            labor: state.labor,
+            materials: state.materials,
+            facilities: state.facilities,
+            villagers: state.villagers,
+            currentTasks: state.currentTasks,
+            completedTasks: state.completedTasks,
+            statistics: state.statistics,
+            isPaused: true,
+            gameSpeed: state.gameSpeed,
+          },
           year: state.year,
           season: state.season,
         };
         
         const savedArchives = localStorage.getItem(STORAGE_KEY);
-        const archives = savedArchives ? JSON.parse(savedArchives) : [];
+        const archives: Archive[] = savedArchives ? JSON.parse(savedArchives) : [];
         archives.push(archive);
         localStorage.setItem(STORAGE_KEY, JSON.stringify(archives));
         
         console.log('游戏已保存', archive);
+        return archive.id;
       },
 
       loadGame: (archive: Archive) => {
+        const gameState = archive.gameState;
         set({
-          ...archive.gameState,
+          year: gameState.year,
+          season: gameState.season,
+          day: gameState.day,
+          money: gameState.money,
+          labor: gameState.labor,
+          materials: gameState.materials,
+          facilities: gameState.facilities,
+          villagers: gameState.villagers,
+          currentTasks: gameState.currentTasks,
+          completedTasks: gameState.completedTasks,
+          statistics: gameState.statistics,
           isPaused: true,
+          gameSpeed: gameState.gameSpeed || 1,
         });
         console.log('游戏已加载', archive);
       },
@@ -343,3 +370,13 @@ export const useGameStore = create<GameStore>()(
     }
   )
 );
+
+export const getSavedArchives = (): Archive[] => {
+  const savedData = localStorage.getItem(STORAGE_KEY);
+  return savedData ? JSON.parse(savedData) : [];
+};
+
+export const deleteArchive = (archiveId: string) => {
+  const archives = getSavedArchives().filter(a => a.id !== archiveId);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(archives));
+};
