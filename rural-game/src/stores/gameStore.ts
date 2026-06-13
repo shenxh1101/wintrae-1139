@@ -209,9 +209,36 @@ export const useGameStore = create<GameStore>()(
         );
         const ecologicalScore = calculateEcologicalScore(state.facilities);
 
+        const tasksToFail: string[] = [];
+        const updatedTasks = state.currentTasks.map(task => {
+          if (task.status === 'in_progress') {
+            const newDeadline = task.deadline - 1;
+            if (newDeadline <= 0) {
+              tasksToFail.push(task.id);
+              return null;
+            }
+            return { ...task, deadline: newDeadline };
+          }
+          return task;
+        }).filter(task => task !== null);
+
+        tasksToFail.forEach(taskId => {
+          get().failTask(taskId);
+        });
+
+        const satisfactionChange = calculateSatisfactionChange(state.villagers, state.facilities);
+        const updatedVillagers = satisfactionChange !== 0
+          ? state.villagers.map(v => ({
+              ...v,
+              satisfaction: Math.max(0, Math.min(100, v.satisfaction + satisfactionChange)),
+            }))
+          : state.villagers;
+
         set({
           day: newDay,
           money: state.money - maintenanceCost + seasonOutput,
+          currentTasks: updatedTasks,
+          villagers: updatedVillagers,
           statistics: {
             ...state.statistics,
             totalExpense: state.statistics.totalExpense + maintenanceCost,
@@ -220,26 +247,6 @@ export const useGameStore = create<GameStore>()(
           },
         });
 
-        const satisfactionChange = calculateSatisfactionChange(state.villagers, state.facilities);
-        if (satisfactionChange !== 0) {
-          const updatedVillagers = state.villagers.map(v => ({
-            ...v,
-            satisfaction: Math.max(0, Math.min(100, v.satisfaction + satisfactionChange)),
-          }));
-          set({ villagers: updatedVillagers });
-        }
-
-        const updatedTasks = state.currentTasks.map(task => {
-          if (task.status === 'in_progress') {
-            const newDeadline = task.deadline - 1;
-            if (newDeadline <= 0) {
-              get().failTask(task.id);
-            }
-            return { ...task, deadline: newDeadline };
-          }
-          return task;
-        });
-        
         if (state.currentTasks.length < 5) {
           get().generateNewTasks();
         }

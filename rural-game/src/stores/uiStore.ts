@@ -1,15 +1,16 @@
 import { create } from 'zustand';
-import { UIState, Facility, Task, Position } from '../types';
+import { UIState, Position } from '../types';
 
 interface UIStore extends UIState {
-  setSelectedFacility: (facility: Facility | null) => void;
+  setSelectedFacility: (facility: any) => void;
   setSelectedPosition: (position: Position | null) => void;
   setShowBuildPanel: (show: boolean) => void;
-  setShowTaskDetails: (task: Task | null) => void;
+  setShowTaskDetails: (task: any) => void;
   setShowSaveDialog: (show: boolean) => void;
   setShowLoadDialog: (show: boolean) => void;
   setNotification: (message: string | null) => void;
   setActiveTab: (tab: UIState['activeTab']) => void;
+  setSelectedFacilityId: (id: string | null) => void;
   clearAll: () => void;
 }
 
@@ -22,6 +23,7 @@ export const useUIStore = create<UIStore>((set) => ({
   showLoadDialog: false,
   notification: null,
   activeTab: 'map',
+  selectedFacilityId: null,
 
   setSelectedFacility: (facility) => set({ selectedFacility: facility }),
   
@@ -47,6 +49,8 @@ export const useUIStore = create<UIStore>((set) => ({
   
   setActiveTab: (tab) => set({ activeTab: tab }),
   
+  setSelectedFacilityId: (id) => set({ selectedFacilityId: id }),
+  
   clearAll: () => set({
     selectedFacility: null,
     selectedPosition: null,
@@ -55,5 +59,6 @@ export const useUIStore = create<UIStore>((set) => ({
     showSaveDialog: false,
     showLoadDialog: false,
     notification: null,
+    selectedFacilityId: null,
   }),
 }));

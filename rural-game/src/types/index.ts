@@ -102,6 +102,7 @@ export interface GameStore extends GameState {
 
 export interface UIState {
   selectedFacility: Facility | null;
+  selectedFacilityId: string | null;
   selectedPosition: Position | null;
   showBuildPanel: boolean;
   showTaskDetails: Task | null;

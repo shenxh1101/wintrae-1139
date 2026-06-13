@@ -11,14 +11,18 @@ export default function MapPage() {
   const { facilities, buildFacility, upgradeFacility, demolishFacility, money } = useGameStore();
   const {
     selectedPosition,
-    selectedFacility,
+    selectedFacilityId,
     showBuildPanel,
     setSelectedPosition,
-    setSelectedFacility,
+    setSelectedFacilityId,
     setShowBuildPanel,
   } = useUIStore();
 
   const [grid, setGrid] = useState<Array<Array<{ occupied: boolean; x: number; y: number }>>>([]);
+
+  const currentSelectedFacility = selectedFacilityId 
+    ? facilities.find(f => f.id === selectedFacilityId) 
+    : null;
 
   useEffect(() => {
     const newGrid = [];
@@ -35,16 +39,25 @@ export default function MapPage() {
     setGrid(newGrid);
   }, [facilities]);
 
+  useEffect(() => {
+    if (currentSelectedFacility) {
+      const stillExists = facilities.some(f => f.id === currentSelectedFacility.id);
+      if (!stillExists) {
+        setSelectedFacilityId(null);
+      }
+    }
+  }, [facilities, currentSelectedFacility, setSelectedFacilityId]);
+
   const handleCellClick = (x: number, y: number) => {
     const facility = facilities.find(f => f.position.x === x && f.position.y === y);
     
     if (facility) {
-      setSelectedFacility(facility);
+      setSelectedFacilityId(facility.id);
       setSelectedPosition(null);
       setShowBuildPanel(false);
     } else {
       setSelectedPosition({ x, y });
-      setSelectedFacility(null);
+      setSelectedFacilityId(null);
       setShowBuildPanel(true);
     }
   };
@@ -55,6 +68,15 @@ export default function MapPage() {
       setSelectedPosition(null);
       setShowBuildPanel(false);
     }
+  };
+
+  const handleUpgrade = (id: string) => {
+    upgradeFacility(id);
+  };
+
+  const handleDemolish = (id: string) => {
+    demolishFacility(id);
+    setSelectedFacilityId(null);
   };
 
   const getFacilityIcon = (type: FacilityType) => {
@@ -91,7 +113,7 @@ export default function MapPage() {
                       facility
                         ? 'shadow-md'
                         : 'bg-white/50 hover:bg-white/80 border-2 border-dashed border-green-300'
-                    } ${selectedPosition?.x === i && selectedPosition?.y === j ? 'ring-4 ring-blue-500' : ''}`}
+                    } ${selectedPosition?.x === i && selectedPosition?.y === j ? 'ring-4 ring-blue-500' : ''} ${currentSelectedFacility?.position.x === i && currentSelectedFacility?.position.y === j ? 'ring-4 ring-yellow-500' : ''}`}
                     style={{
                       backgroundColor: facility ? config?.color : undefined,
                     }}
@@ -207,13 +229,13 @@ export default function MapPage() {
         </div>
       )}
 
-      {selectedFacility && (
+      {currentSelectedFacility && (
         <div className="w-80 bg-white shadow-xl p-6">
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-xl font-bold text-green-800">设施详情</h3>
             <button
               onClick={() => {
-                setSelectedFacility(null);
+                setSelectedFacilityId(null);
               }}
               className="text-gray-500 hover:text-gray-700"
             >
@@ -226,43 +248,43 @@ export default function MapPage() {
               <div className="flex items-center space-x-3 mb-3">
                 <div
                   className="w-16 h-16 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: FACILITY_CONFIG[selectedFacility.type].color }}
+                  style={{ backgroundColor: FACILITY_CONFIG[currentSelectedFacility.type].color }}
                 >
                   {(() => {
-                    const Icon = getFacilityIcon(selectedFacility.type);
+                    const Icon = getFacilityIcon(currentSelectedFacility.type);
                     return <Icon size={32} color="white" />;
                   })()}
                 </div>
                 <div>
                   <div className="text-2xl font-bold">
-                    {FACILITY_CONFIG[selectedFacility.type].name}
+                    {FACILITY_CONFIG[currentSelectedFacility.type].name}
                   </div>
                   <div className="text-sm text-gray-600">
-                    等级 Lv.{selectedFacility.level}
+                    等级 Lv.{currentSelectedFacility.level}
                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
-                <div>📍 位置: ({selectedFacility.position.x}, {selectedFacility.position.y})</div>
-                <div>📈 产出: {selectedFacility.output}</div>
-                <div>🔧 维护费: {selectedFacility.maintenanceCost}</div>
-                <div>😊 满意度: +{selectedFacility.satisfactionBonus}</div>
+                <div>📍 位置: ({currentSelectedFacility.position.x}, {currentSelectedFacility.position.y})</div>
+                <div>📈 产出: {currentSelectedFacility.output}</div>
+                <div>🔧 维护费: {currentSelectedFacility.maintenanceCost}</div>
+                <div>😊 满意度: +{currentSelectedFacility.satisfactionBonus}</div>
               </div>
             </div>
 
             <div className="space-y-2">
               <button
-                onClick={() => upgradeFacility(selectedFacility.id)}
-                disabled={money < selectedFacility.cost * selectedFacility.level}
+                onClick={() => handleUpgrade(currentSelectedFacility.id)}
+                disabled={money < currentSelectedFacility.cost * currentSelectedFacility.level}
                 className="w-full py-2 bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 text-white rounded-lg font-medium transition-colors"
               >
-                升级 (💰 {selectedFacility.cost * selectedFacility.level})
+                升级 (💰 {currentSelectedFacility.cost * currentSelectedFacility.level})
               </button>
               <button
-                onClick={() => demolishFacility(selectedFacility.id)}
+                onClick={() => handleDemolish(currentSelectedFacility.id)}
                 className="w-full py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
               >
-                拆除 (返还 💰 {Math.floor(selectedFacility.cost * 0.5)})
+                拆除 (返还 💰 {Math.floor(currentSelectedFacility.cost * 0.5)})
               </button>
             </div>
           </div>
