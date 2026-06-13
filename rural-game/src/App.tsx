@@ -6,10 +6,19 @@ import VillagersPage from './pages/VillagersPage';
 import AchievementsPage from './pages/AchievementsPage';
 import { useUIStore } from './stores/uiStore';
 import { useGameStore } from './stores/gameStore';
+import { useState, useEffect } from 'react';
 
 function App() {
-  const { activeTab, notification, setNotification } = useUIStore();
+  const [isLoading, setIsLoading] = useState(true);
+  const { activeTab, notification } = useUIStore();
   const { isPaused } = useGameStore();
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const renderPage = () => {
     switch (activeTab) {
@@ -27,6 +36,18 @@ function App() {
         return <MapPage />;
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">🏡</div>
+          <div className="text-2xl font-bold text-green-800">数字乡村</div>
+          <div className="text-gray-600 mt-2">加载中...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
